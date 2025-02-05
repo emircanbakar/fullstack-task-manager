@@ -9,4 +9,11 @@ const authSchema = mongoose.Schema(
   { timestamps: true }
 );
 
+authSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcyrpt.genSalt(10);
+  this.password = await bcyrpt.hash(this.password, salt);
+  next();
+});
+
 module.exports = mongoose.model("Auth", authSchema);

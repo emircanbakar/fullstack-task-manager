@@ -4,53 +4,66 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SEC;
 
-const register = async () => {
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+};
+
+
+const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
+
     if (!username || !password || !email) {
       return res
         .status(400)
-        .json({ message: "lütfen bütün alanları doldurunuz" });
+        .json({ message: "Lütfen tüm alanları doldurunuz." });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        message: "Bu e-posta ile bir hesap daha önceden oluşturulmuş.",
-      });
+      return res
+        .status(400)
+        .json({ message: "Bu e-posta ile bir hesap zaten var!" });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = new User({ username, email, password: passwordHash });
     await newUser.save();
 
-    res.status(201).json({ message: "Kayıt Başarılı!" });
-    console.log(token)
-  } catch (error) {
+    const token = generateToken(newUser._id);
+
     res
-      .status(500)
-      .json({ message: "Lütfen daha sonra tekrar kayıt olmayı deneyiniz." });
-    console.error(error, "error");
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+      })
+      .status(201)
+      .json({ message: "Kayıt başarılı!", token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lütfen daha sonra tekrar deneyiniz." });
   }
 };
 
-const login = async () => {
+
+const login = async (req, res) => {
   try {
     const { username, password } = req.body;
+
     if (!username || !password) {
-      res
+      return res
         .status(400)
-        .json({ message: "Lütfen kullanıcı adı ve şifre bilginizi giriniz!" });
+        .json({ message: "Lütfen kullanıcı adı ve şifre giriniz!" });
     }
 
     const user = await User.findOne({ username });
-    if (!user) res.status(400).json({ message: "Böyle bir kullanıcı yok!" });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res
+        .status(400)
+        .json({ message: "Kullanıcı adı veya şifre hatalı!" });
+    }
 
-    const isUserMatch = await bcrypt.compare(password, user.password);
-    if (!isUserMatch)
-      res.status(400).json({ message: "Giriş Bilgileri Hatalı!" });
-
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
+    const token = generateToken(user._id);
 
     res
       .cookie("token", token, {
@@ -58,10 +71,25 @@ const login = async () => {
         secure: process.env.NODE_ENV === "production",
       })
       .status(200)
-      .json({ message: "Giriş Başarılı!", token });
+      .json({ message: "Giriş başarılı!", token });
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    res.status(500).json({ message: "Bir hata oluştu, tekrar deneyiniz." });
   }
 };
 
-module.exports = { login, register };
+const logout = async (req, res) => {
+  try {
+    res
+      .clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production" })
+      .status(200)
+      .json({ message: "Çıkış başarılı!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Çıkış işlemi sırasında bir hata oluştu." });
+  }
+};
+
+
+module.exports = { login, register, logout};
+ 

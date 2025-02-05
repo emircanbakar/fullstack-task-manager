@@ -1,10 +1,10 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const Auth = require("../models/Auth");
+const { register, login, logout } = require("../controllers/userController");
 
-const router = express.Router()
-const JWT_SECRET = process.env.JWT_SEC
+const router = express.Router();
 
+router.post("/register", register);
+router.post("/login", login);
+router.post("/logout", logout);
 
-router.post
+module.exports = router;
