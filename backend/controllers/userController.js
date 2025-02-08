@@ -4,11 +4,15 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SEC;
 
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET tanımlı değil! .env dosyanızı kontrol edin.");
+}
+
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: "1h" });
 };
 
-
+// ✅ KAYIT OL
 const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -32,20 +36,19 @@ const register = async (req, res) => {
 
     const token = generateToken(newUser._id);
 
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-      })
+    return res
+      .cookie("token", token, { httpOnly: true })
       .status(201)
       .json({ message: "Kayıt başarılı!", token });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Lütfen daha sonra tekrar deneyiniz." });
+    return res
+      .status(500)
+      .json({ message: "Lütfen daha sonra tekrar deneyiniz." });
   }
 };
 
-
+// ✅ GİRİŞ YAP
 const login = async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -57,39 +60,50 @@ const login = async (req, res) => {
     }
 
     const user = await User.findOne({ username });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+
+    if (!user) {
+      return res.status(400).json({ message: "Kullanıcı adı hatalı!" });
+    }
+
+    console.log("JWT_SECRET:", process.env.JWT_SEC);
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log(password, user.password)
+    console.log(isMatch)
+    if (!isMatch) {
       return res
         .status(400)
-        .json({ message: "Kullanıcı adı veya şifre hatalı!" });
+        .json({ message: "Kullanıcı adı veya şifre hatalı! bcyrpt" });
     }
 
     const token = generateToken(user._id);
 
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-      })
+    return res
+      .cookie("token", token, { httpOnly: true })
       .status(200)
       .json({ message: "Giriş başarılı!", token });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Bir hata oluştu, tekrar deneyiniz." });
+    return res
+      .status(500)
+      .json({ message: "Bir hata oluştu, tekrar deneyiniz." });
   }
 };
 
 const logout = async (req, res) => {
   try {
     res
-      .clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production" })
+      .clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+      })
       .status(200)
       .json({ message: "Çıkış başarılı!" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Çıkış işlemi sırasında bir hata oluştu." });
+    return res
+      .status(500)
+      .json({ message: "Çıkış işlemi sırasında bir hata oluştu." });
   }
 };
 
-
-module.exports = { login, register, logout};
- 
+module.exports = { login, register, logout };
