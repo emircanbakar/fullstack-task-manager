@@ -1,21 +1,24 @@
+require("dotenv").config();
+
 const User = require("../models/Auth");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = process.env.JWT_SEC;
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET tanımlı değil! .env dosyanızı kontrol edin.");
-}
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, JWT_SECRET, { expiresIn: "1h" });
-};
-
-// ✅ KAYIT OL
 const register = async (req, res) => {
+
+
+  // req.bodyde gönderilen password base64 ile şifrelenebilir
   try {
-    const { username, email, password } = req.body;
+    const { email, username, password } = req.body;
+
+    // const encryptedpass = await bcrypt.hash(password,10);
+    
+    // const check = await bcrypt.compare(password, encryptedpass);
+    // console.log(encryptedpass)
+
+    // return res.status(200).json({ message: "Kayıt başarılı!", data: check });
 
     if (!username || !password || !email) {
       return res
@@ -31,15 +34,13 @@ const register = async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, email, password: passwordHash });
-    await newUser.save();
+    const newUser = await User.create({
+      username,
+      email,
+      password: passwordHash,
+    });
 
-    const token = generateToken(newUser._id);
-
-    return res
-      .cookie("token", token, { httpOnly: true })
-      .status(201)
-      .json({ message: "Kayıt başarılı!", token });
+    return res.status(201).json({ message: "Kayıt başarılı!", data: newUser });
   } catch (error) {
     console.error(error);
     return res
@@ -48,39 +49,32 @@ const register = async (req, res) => {
   }
 };
 
-// ✅ GİRİŞ YAP
 const login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!username || !password) {
+    const user = await User.findOne({ email });
+    if (!user)
       return res
-        .status(400)
-        .json({ message: "Lütfen kullanıcı adı ve şifre giriniz!" });
-    }
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
-    const user = await User.findOne({ username });
-
-    if (!user) {
-      return res.status(400).json({ message: "Kullanıcı adı hatalı!" });
-    }
-
-    console.log("JWT_SECRET:", process.env.JWT_SEC);
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log(password, user.password)
-    console.log(isMatch)
-    if (!isMatch) {
+    // console.log(isMatch);
+    // console.log(password);
+    // console.log(user.password);
+
+    if (!isMatch)
       return res
         .status(400)
-        .json({ message: "Kullanıcı adı veya şifre hatalı! bcyrpt" });
-    }
+        .json({ success: false, message: "Invalid credentials" });
 
-    const token = generateToken(user._id);
-
-    return res
-      .cookie("token", token, { httpOnly: true })
-      .status(200)
-      .json({ message: "Giriş başarılı!", token });
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SEC,
+      { expiresIn: "1h" }
+    );
+    res.status(200).json({ success: true, token });
   } catch (error) {
     console.error(error);
     return res
