@@ -3,7 +3,7 @@ import TaskContext from "../context/TaskContext";
 import axios from "axios";
 
 
-const Create = () => {
+const CreateTask = () => {
   const  {setTasks} = useContext(TaskContext)
 
   useEffect(() => {
@@ -22,4 +22,4 @@ const Create = () => {
   return <div></div>;
 };
 
-export default Create;
+export default CreateTask;
