@@ -8,7 +8,11 @@ const TaskCard = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/tasks"); // Backend API endpoint
+        const token = localStorage.getItem("token"); // Token'ı localStorage'dan al
+        const response = await axios.get("http://localhost:3000/api/tasks", {
+          headers: { Authorization: `Bearer ${token}` }, // Token'ı Header'a ekle
+        });
+
         setTasks(response.data);
         setLoading(false);
       } catch (err) {
@@ -44,6 +48,9 @@ const TaskCard = () => {
               <div className="flex flex-col bg-slate-700 p-4 rounded-md text-white">
                 <h3 className="text-2xl">{task.title}</h3>
                 <p className="">{task.description}</p>
+                <p className="text-sm text-gray-300 mt-2">
+                  Ekleyen: {task.user?.username || "Bilinmiyor"}
+                </p>
               </div>
             </li>
           ))}
