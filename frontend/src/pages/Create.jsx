@@ -7,7 +7,7 @@ const CreateTask = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  const create = async (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
     if (!title || !description) {
       alert("Lütfen tüm alanları doldurun.");
@@ -16,9 +16,15 @@ const CreateTask = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
 
-      const res = await axios.post("/api/tasks", { title, description }, config);
+      const res = await axios.post(
+        "http://localhost:3000/api/tasks",
+        { title, description },
+        config
+      );
       setTasks((prevTasks) => [...prevTasks, res.data]);
 
       console.log("Görev başarıyla oluşturuldu:", res.data);
@@ -32,7 +38,7 @@ const CreateTask = () => {
   return (
     <div className="max-w-lg mx-auto p-4 bg-white shadow-md rounded-lg">
       <h2 className="text-xl font-bold mb-4 text-center">Yeni Görev Ekle</h2>
-      <form onSubmit={create} className="flex flex-col gap-4">
+      <form onSubmit={handleCreate} className="flex flex-col gap-4">
         <input
           type="text"
           placeholder="Görev Başlığı"
