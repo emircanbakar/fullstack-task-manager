@@ -4,17 +4,13 @@ const User = require("../models/Auth");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-
-
 const register = async (req, res) => {
-
-
   // req.bodyde gönderilen password base64 ile şifrelenebilir
   try {
     const { email, username, password } = req.body;
 
     // const encryptedpass = await bcrypt.hash(password,10);
-    
+
     // const check = await bcrypt.compare(password, encryptedpass);
     // console.log(encryptedpass)
 
@@ -33,6 +29,13 @@ const register = async (req, res) => {
         .json({ message: "Bu e-posta ile bir hesap zaten var!" });
     }
 
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res
+        .status(400)
+        .json({ message: "Bu kullanıcı adı zaten kullanılıyor!" });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = await User.create({
       username,
@@ -43,6 +46,19 @@ const register = async (req, res) => {
     return res.status(201).json({ message: "Kayıt başarılı!", data: newUser });
   } catch (error) {
     console.error(error);
+
+    // MongoDB duplicate key hatası kontrolü
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res
+        .status(400)
+        .json({
+          message: `Bu ${
+            field === "email" ? "e-posta" : "kullanıcı adı"
+          } zaten kullanılıyor!`,
+        });
+    }
+
     return res
       .status(500)
       .json({ message: "Lütfen daha sonra tekrar deneyiniz." });
