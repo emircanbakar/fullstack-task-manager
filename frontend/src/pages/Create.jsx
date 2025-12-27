@@ -1,8 +1,10 @@
 import { useContext, useState } from "react";
 import TaskContext from "../context/TaskContext";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const CreateTask = () => {
+  const navigate = useNavigate();
   const { setTasks } = useContext(TaskContext);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -75,6 +77,7 @@ const CreateTask = () => {
 
         <button
           type="submit"
+          onClick={() => navigate("/home")}
           className="bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
         >
           Create Task

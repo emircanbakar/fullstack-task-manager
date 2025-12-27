@@ -1,30 +1,10 @@
-import { useEffect, useContext } from "react";
+/* eslint-disable react/prop-types */
+import { useContext } from "react";
 import TaskContext from "../../context/TaskContext";
 import axios from "axios";
 
-const TaskCard = () => {
-  const { setLoading, setTasks, setError, tasks, loading, error } =
-    useContext(TaskContext);
-
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:3000/api/tasks", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setTasks(response.data);
-        setLoading(false);
-        console.log(response, "tasks");
-      } catch (err) {
-        setError("Görevler yüklenirken bir hata oluştu.");
-        console.log(err);
-        setLoading(false);
-      }
-    };
-    fetchTasks();
-  }, []);
+const TaskCard = ({ task }) => {
+  const { setTasks } = useContext(TaskContext);
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
@@ -37,58 +17,32 @@ const TaskCard = () => {
 
       // Task listesini güncelle
       setTasks((prevTasks) =>
-        prevTasks.map((task) => (task._id === taskId ? response.data : task))
+        prevTasks.map((t) => (t._id === taskId ? response.data : t))
       );
     } catch (err) {
       console.error("Status güncellenirken hata:", err);
     }
   };
 
-  if (loading) {
-    return <div>Görevler yükleniyor...</div>;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
-  }
   return (
-    <div>
-      {tasks.length === 0 ? (
-        <p>Gösterilecek görev yok.</p>
-      ) : (
-        <div className="grid gap-4 grid-cols-3 grid-rows-4">
-          {tasks.map((task) => (
-            <div
-              key={task._id}
-              className="flex flex-col p-2 gap-4 bg-white shadow-lg rounded-lg"
-            >
-              <h3 className="font-bold text-lg">{task.title}</h3>
-              <p className="text-gray-600">{task.description}</p>
+    <div className="flex flex-col p-4 gap-3 bg-white shadow-lg rounded-lg border border-gray-200">
+      <h3 className="font-bold text-lg text-gray-800">{task.title}</h3>
+      <p className="text-gray-600 text-sm">{task.description}</p>
 
-              <select
-                value={task.completed || "not started"}
-                onChange={(e) => handleStatusChange(task._id, e.target.value)}
-                className="border p-2 rounded-md"
-              >
-                <option value="not started">Not Started</option>
-                <option value="in progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+      <select
+        value={task.completed || "not started"}
+        onChange={(e) => handleStatusChange(task._id, e.target.value)}
+        className="border p-2 rounded-md text-sm"
+      >
+        <option value="not started">Not Started</option>
+        <option value="in progress">In Progress</option>
+        <option value="completed">Completed</option>
+      </select>
 
-              {task.project && (
-                <span className="text-sm text-gray-500">
-                  Project: {task.project}
-                </span>
-              )}
-              {task.level && (
-                <span className="text-sm text-gray-500">
-                  Level: {task.level}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-1 text-xs text-gray-500">
+        {task.project && <span>📁 Project: {task.project}</span>}
+        {task.level && <span>⚡ Level: {task.level}</span>}
+      </div>
     </div>
   );
 };
