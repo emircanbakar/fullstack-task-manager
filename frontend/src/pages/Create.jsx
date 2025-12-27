@@ -6,6 +6,8 @@ const CreateTask = () => {
   const { setTasks } = useContext(TaskContext);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [project, setProject] = useState("");
+  const [level, setLevel] = useState("");
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ const CreateTask = () => {
 
       const res = await axios.post(
         "http://localhost:3000/api/tasks",
-        { title, description },
+        { title, description, level, project },
         config
       );
       setTasks((prevTasks) => [...prevTasks, res.data]);
@@ -30,6 +32,8 @@ const CreateTask = () => {
       console.log("Görev başarıyla oluşturuldu:", res.data);
       setTitle("");
       setDescription("");
+      setProject("");
+      setLevel("");
     } catch (error) {
       console.error("Görev oluşturulurken bir hata oluştu:", error);
     }
@@ -41,22 +45,39 @@ const CreateTask = () => {
       <form onSubmit={handleCreate} className="flex flex-col gap-4">
         <input
           type="text"
-          placeholder="Görev Başlığı"
+          placeholder="Task Name"
           className="border p-2 rounded-md"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
-          placeholder="Görev Açıklaması"
+          placeholder="Task Description"
           className="border p-2 rounded-md"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         ></textarea>
+        <input
+          type="text"
+          placeholder="Project"
+          className="border p-2 rounded-md"
+          value={project}
+          onChange={(e) => setProject(e.target.value)}
+        />
+        <select
+          value={level}
+          onChange={(e) => setLevel(e.target.value)}
+          className="border p-2 rounded-md"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+
         <button
           type="submit"
           className="bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
         >
-          Görev Ekle
+          Create Task
         </button>
       </form>
     </div>

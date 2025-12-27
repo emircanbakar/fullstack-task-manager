@@ -50,13 +50,11 @@ const register = async (req, res) => {
     // MongoDB duplicate key hatası kontrolü
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
-      return res
-        .status(400)
-        .json({
-          message: `Bu ${
-            field === "email" ? "e-posta" : "kullanıcı adı"
-          } zaten kullanılıyor!`,
-        });
+      return res.status(400).json({
+        message: `Bu ${
+          field === "email" ? "e-posta" : "kullanıcı adı"
+        } zaten kullanılıyor!`,
+      });
     }
 
     return res
@@ -86,7 +84,7 @@ const login = async (req, res) => {
         .json({ success: false, message: "Invalid credentials" });
 
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, username: user.username },
       process.env.JWT_SEC,
       { expiresIn: "1h" }
     );
