@@ -1,6 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import CryptoJS from "crypto-js";
+
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const Auth = () => {
   const [formData, setFormData] = useState({
@@ -21,12 +25,18 @@ const Auth = () => {
     setError(null);
 
     const url = isLogin
-      ? "http://localhost:3000/api/auth/login"
-      : "http://localhost:3000/api/auth/register";
+      ? `${API_URL}/api/auth/login`
+      : `${API_URL}/api/auth/register`;
+
+    // AES-256 ile şifrele
+    const encryptedPassword = CryptoJS.AES.encrypt(
+      formData.password,
+      ENCRYPTION_KEY
+    ).toString();
 
     const requestData = isLogin
-      ? { email: formData.email, password: formData.password }
-      : formData;
+      ? { email: formData.email, password: encryptedPassword }
+      : { ...formData, password: encryptedPassword };
 
     try {
       const res = await axios.post(url, requestData, { withCredentials: true });

@@ -12,9 +12,6 @@ const getTasks = async (req, res) => {
 
 const createTask = async (req, res) => {
   try {
-    console.log("req.user:", req.user);
-    console.log("req.body:", req.body);
-
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Yetkisiz işlem." });
     }

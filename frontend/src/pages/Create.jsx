@@ -9,7 +9,7 @@ const CreateTask = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [project, setProject] = useState("");
-  const [level, setLevel] = useState("");
+  const [level, setLevel] = useState("low");
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -35,7 +35,7 @@ const CreateTask = () => {
       setTitle("");
       setDescription("");
       setProject("");
-      setLevel("");
+      setLevel("low");
     } catch (error) {
       console.error("Görev oluşturulurken bir hata oluştu:", error);
     }
@@ -70,6 +70,7 @@ const CreateTask = () => {
           onChange={(e) => setLevel(e.target.value)}
           className="border p-2 rounded-md"
         >
+          <option value="">Select Priority</option>
           <option value="low">Low</option>
           <option value="medium">Medium</option>
           <option value="high">High</option>

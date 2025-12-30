@@ -1,47 +1,79 @@
 /* eslint-disable react/prop-types */
-import { useContext } from "react";
-import TaskContext from "../../context/TaskContext";
-import axios from "axios";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-const TaskCard = ({ task }) => {
-  const { setTasks } = useContext(TaskContext);
+const TaskCard = ({ task, isDragging }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({ id: task._id });
 
-  const handleStatusChange = async (taskId, newStatus) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.patch(
-        `http://localhost:3000/api/tasks/${taskId}/status`,
-        { completed: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isSortableDragging ? 0.5 : 1,
+  };
 
-      // Task listesini güncelle
-      setTasks((prevTasks) =>
-        prevTasks.map((t) => (t._id === taskId ? response.data : t))
-      );
-    } catch (err) {
-      console.error("Status güncellenirken hata:", err);
+  const getLevelColor = (level) => {
+    switch (level?.toLowerCase()) {
+      case "low":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "high":
+        return "bg-red-100 text-red-800 border-red-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
     }
   };
 
+  if (isDragging) {
+    return (
+      <div className="flex flex-col p-3 gap-2 bg-white shadow-lg rounded border-2 border-gray-900">
+        {task.level && (
+          <span
+            className={`text-xs font-semibold px-2 py-1 rounded border w-fit ${getLevelColor(
+              task.level
+            )}`}
+          >
+            {task.level.toUpperCase()}
+          </span>
+        )}
+        <h3 className="font-semibold text-sm text-gray-900">{task.title}</h3>
+        <p className="text-gray-600 text-xs line-clamp-2">{task.description}</p>
+        <div className="flex flex-row gap-3 text-xs text-gray-500">
+          {task.project && <span>📁 {task.project}</span>}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col p-4 gap-3 bg-white shadow-lg rounded-lg border border-gray-200">
-      <h3 className="font-bold text-lg text-gray-800">{task.title}</h3>
-      <p className="text-gray-600 text-sm">{task.description}</p>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="flex flex-col p-3 gap-2 bg-white rounded border border-gray-300 hover:border-gray-400 cursor-grab active:cursor-grabbing transition-all"
+    >
+      {task.level && (
+        <span
+          className={`text-xs font-semibold px-2 py-1 rounded border w-fit ${getLevelColor(
+            task.level
+          )}`}
+        >
+          {task.level.toUpperCase()}
+        </span>
+      )}
+      <h3 className="font-semibold text-sm text-gray-900">{task.title}</h3>
+      <p className="text-gray-600 text-xs line-clamp-2">{task.description}</p>
 
-      <select
-        value={task.completed || "not started"}
-        onChange={(e) => handleStatusChange(task._id, e.target.value)}
-        className="border p-2 rounded-md text-sm"
-      >
-        <option value="not started">Not Started</option>
-        <option value="in progress">In Progress</option>
-        <option value="completed">Completed</option>
-      </select>
-
-      <div className="flex flex-col gap-1 text-xs text-gray-500">
-        {task.project && <span>📁 Project: {task.project}</span>}
-        {task.level && <span>⚡ Level: {task.level}</span>}
+      <div className="flex flex-row gap-3 text-xs text-gray-500">
+        {task.project && <span>📁 {task.project}</span>}
       </div>
     </div>
   );

@@ -3,20 +3,15 @@ require("dotenv").config();
 const User = require("../models/Auth");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const CryptoJS = require("crypto-js");
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 
 const register = async (req, res) => {
-  // req.bodyde gönderilen password base64 ile şifrelenebilir
   try {
-    const { email, username, password } = req.body;
+    const { email, username, password: encodedPassword } = req.body;
 
-    // const encryptedpass = await bcrypt.hash(password,10);
-
-    // const check = await bcrypt.compare(password, encryptedpass);
-    // console.log(encryptedpass)
-
-    // return res.status(200).json({ message: "Kayıt başarılı!", data: check });
-
-    if (!username || !password || !email) {
+    if (!username || !encodedPassword || !email) {
       return res
         .status(400)
         .json({ message: "Lütfen tüm alanları doldurunuz." });
@@ -34,6 +29,17 @@ const register = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Bu kullanıcı adı zaten kullanılıyor!" });
+    }
+
+    // AES-256 ile şifreyi çöz
+    const decryptedBytes = CryptoJS.AES.decrypt(
+      encodedPassword,
+      ENCRYPTION_KEY
+    );
+    const password = decryptedBytes.toString(CryptoJS.enc.Utf8);
+
+    if (!password) {
+      return res.status(400).json({ message: "Şifre çözülemedi!" });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -65,7 +71,20 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password: encodedPassword } = req.body;
+
+    // AES-256 ile şifreyi çöz
+    const decryptedBytes = CryptoJS.AES.decrypt(
+      encodedPassword,
+      ENCRYPTION_KEY
+    );
+    const password = decryptedBytes.toString(CryptoJS.enc.Utf8);
+
+    if (!password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Şifre çözülemedi!" });
+    }
 
     const user = await User.findOne({ email });
     if (!user)
