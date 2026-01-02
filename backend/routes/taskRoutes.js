@@ -4,7 +4,7 @@ const {
   createTask,
   updateTaskStatus,
 } = require("../controllers/taskController");
-const authMiddleware = require("../middlewares/AuthMiddleware");
+const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
 
 router.route("/").get(authMiddleware, getTasks);

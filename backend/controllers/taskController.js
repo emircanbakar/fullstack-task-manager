@@ -2,7 +2,11 @@ const Task = require("../models/Task");
 
 const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find().populate("user", "username email");
+    // Sadece giriş yapan kullanıcının görevlerini getir
+    const tasks = await Task.find({ user: req.user.id }).populate(
+      "user",
+      "username email"
+    );
     res.status(200).json(tasks);
   } catch (error) {
     console.error("getTasks hatası:", error);
@@ -44,11 +48,23 @@ const updateTaskStatus = async (req, res) => {
       return res.status(400).json({ message: "Geçersiz status değeri." });
     }
 
-    const task = await Task.findByIdAndUpdate(id, { completed }, { new: true });
+    // Önce görevi bul ve kullanıcıya ait olup olmadığını kontrol et
+    const task = await Task.findById(id);
 
     if (!task) {
       return res.status(404).json({ message: "Görev bulunamadı." });
     }
+
+    // Görevin sahibi ile giriş yapan kullanıcı aynı mı kontrol et
+    if (task.user.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Bu görevi güncelleme yetkiniz yok." });
+    }
+
+    // Güncellemeyi yap
+    task.completed = completed;
+    await task.save();
 
     res.status(200).json(task);
   } catch (error) {

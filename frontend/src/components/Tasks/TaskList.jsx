@@ -1,9 +1,10 @@
 /* eslint-disable react/prop-types */
 import TaskCard from "./TaskCard";
-import { Link } from "react-router";
+import CreateTaskModal from "./CreateTaskModal";
 import { useContext, useEffect } from "react";
 import TaskContext from "../../context/TaskContext";
 import axios from "axios";
+import { Toaster } from "react-hot-toast";
 import {
   DndContext,
   DragOverlay,
@@ -29,6 +30,7 @@ const TaskList = () => {
   const { tasks, loading, error, setTasks, setLoading, setError } =
     useContext(TaskContext);
   const [activeId, setActiveId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -123,18 +125,23 @@ const TaskList = () => {
   if (error) {
     return <div>{error}</div>;
   }
-
   return (
     <div className="flex flex-col h-screen overflow-hidden px-4 py-6 bg-white">
+      <Toaster />
+      <CreateTaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
       <div className="flex flex-row justify-between mb-6 flex-shrink-0">
         <h1 className="text-stone-800 text-3xl font-bold">Görev Listesi</h1>
         <div className="flex flex-row">
-          <Link
-            className="text-white px-4 py-2 bg-black rounded-md"
-            to="/newTask"
+          <button
+            className="text-white px-4 py-2 bg-black rounded-md hover:bg-gray-800 transition-colors"
+            onClick={() => setIsModalOpen(true)}
           >
             New Task
-          </Link>
+          </button>
         </div>
       </div>
 
