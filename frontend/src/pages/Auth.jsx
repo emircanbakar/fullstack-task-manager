@@ -25,8 +25,8 @@ const Auth = () => {
     setError(null);
 
     const url = isLogin
-      ? `${API_URL}/api/auth/login`
-      : `${API_URL}/api/auth/register`;
+      ? `${API_URL}/api/users/login`
+      : `${API_URL}/api/users/register`;
 
     // AES-256 ile şifrele
     const encryptedPassword = CryptoJS.AES.encrypt(

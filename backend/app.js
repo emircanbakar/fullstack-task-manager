@@ -17,11 +17,10 @@ app.use(
   })
 );
 
-
 app.use(express.json());
 app.use(cookieParser());
 
-app.use("/api/auth", userRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
 
 app.get("/", (req, res) => {

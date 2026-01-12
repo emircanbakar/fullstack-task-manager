@@ -133,4 +133,126 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { login, register, logout };
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { username, email } = req.body;
+
+    if (!username && !email) {
+      return res.status(400).json({
+        message: "Please provide at least one field to update.",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Check if email is already taken by another user
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) {
+        return res.status(400).json({
+          message: "This email is already in use!",
+        });
+      }
+      user.email = email;
+    }
+
+    // Check if username is already taken by another user
+    if (username && username !== user.username) {
+      const existingUsername = await User.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({
+          message: "This username is already in use!",
+        });
+      }
+      user.username = username;
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile updated successfully!",
+      data: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    return res.status(500).json({
+      message: "An error occurred while updating profile.",
+    });
+  }
+};
+
+const updatePassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      currentPassword: encodedCurrentPassword,
+      newPassword: encodedNewPassword,
+    } = req.body;
+
+    if (!encodedCurrentPassword || !encodedNewPassword) {
+      return res.status(400).json({
+        message: "Please provide both current and new password.",
+      });
+    }
+
+    // Decrypt passwords
+    const currentPasswordBytes = CryptoJS.AES.decrypt(
+      encodedCurrentPassword,
+      ENCRYPTION_KEY
+    );
+    const currentPassword = currentPasswordBytes.toString(CryptoJS.enc.Utf8);
+
+    const newPasswordBytes = CryptoJS.AES.decrypt(
+      encodedNewPassword,
+      ENCRYPTION_KEY
+    );
+    const newPassword = newPasswordBytes.toString(CryptoJS.enc.Utf8);
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Password decryption failed!" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "New password must be at least 6 characters!",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Current password is incorrect!",
+      });
+    }
+
+    // Hash and save new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    user.password = passwordHash;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password updated successfully!",
+    });
+  } catch (error) {
+    console.error("Update password error:", error);
+    return res.status(500).json({
+      message: "An error occurred while updating password.",
+    });
+  }
+};
+
+module.exports = { login, register, logout, updateProfile, updatePassword };
